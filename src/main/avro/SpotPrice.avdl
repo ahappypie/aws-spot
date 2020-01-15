@@ -1,0 +1,11 @@
+@namespace("io.github.ahappypie.spotter")
+protocol Spotter {
+
+  record SpotPrice {
+    string provider;
+    string zone;
+    string instance;
+    timestamp_ms timestamp;
+    double price;
+  }
+}

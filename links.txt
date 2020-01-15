@@ -1,0 +1,5 @@
+https://engineering.videoblocks.com/foolproof-schema-management-with-github-actions-and-avro-afb0ebb00dfe
+https://medium.com/@lukasgrasse/producing-and-consuming-avro-messages-over-kafka-in-scala-edc26d69298c
+https://databricks.com/blog/2019/02/15/how-to-work-with-avro-kafka-and-schema-registry-in-databricks.html
+https://aseigneurin.github.io/2018/08/02/kafka-tutorial-4-avro-and-schema-registry.html
+https://stackoverflow.com/questions/48882723/integrating-spark-structured-streaming-with-the-confluent-schema-registry
