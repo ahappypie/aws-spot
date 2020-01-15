@@ -5,21 +5,42 @@ import java.util.Properties
 import akka.actor.{Actor, Props}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import io.github.ahappypie.spotter.SpotPrice
-import io.github.ahappypie.spotter.aws.AWSSpotPriceActor.AWSSpotPriceResponse
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
 
 object DataActor {
-  def props = Props(new DataActor)
+  def props(topic: String) = Props(new DataActor(topic))
 }
 
-class DataActor extends Actor {
-  import DataActor._
-
+class DataActor(topic: String) extends Actor {
   var producer: KafkaProducer[String, SpotPrice] = null
 
   override def preStart(): Unit = {
     super.preStart()
+
+    producer = getProducer()
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+
+    producer.flush()
+    producer.close()
+    println("producer closed")
+  }
+
+  override def receive: Receive = {
+    case data: Iterator[SpotPrice] => {
+      val s = data.size
+      for(p <- data) {
+        val f = producer.send(new ProducerRecord(topic, p))
+      }
+      println(s"published $s records")
+      sender ! s
+    }
+  }
+
+  private def getProducer(): KafkaProducer[String, io.github.ahappypie.spotter.SpotPrice] = {
     val props = new Properties()
     //set key serializer
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer].getCanonicalName)
@@ -28,21 +49,11 @@ class DataActor extends Actor {
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[KafkaAvroSerializer].getCanonicalName)
 
     //set kafka url
-    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, sys.env.getOrElse("KAFKA_URL", "http://testmachine:9092"))
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, sys.env.getOrElse("KAFKA_URL", "localhost:9092"))
 
     //set schema registry url
-    props.put("schema.registry.url", sys.env.getOrElse("SCHEMA_REGISTRY_URL", "http://testmachine:8081"))
+    props.put("schema.registry.url", sys.env.getOrElse("SCHEMA_REGISTRY_URL", "http://localhost:8081"))
 
-    producer = new KafkaProducer[String, SpotPrice](props)
-  }
-
-  override def receive: Receive = {
-    case data: AWSSpotPriceResponse => {
-      for(p <- data.prices) {
-        producer.send(new ProducerRecord("spot-price-topic",
-          new SpotPrice(provider = "aws", zone = p.availabilityZone(), instance = p.instanceTypeAsString(),
-            timestamp = p.timestamp(), price = p.spotPrice().toDouble)))
-      }
-    }
+    new KafkaProducer[String, SpotPrice](props)
   }
 }
