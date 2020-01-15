@@ -1,0 +1,19 @@
+---
+version: '2'
+services:
+  polynote:
+    image: polynote/polynote:0.2.15-2.11-spark2.4
+    entrypoint: ['./polynote/polynote.py', "--config", "/opt/config/config.yaml"]
+    container_name: polynote
+    networks:
+      - spotter
+    ports:
+      - "8192:8192"
+      - "4040-4050:4040-4050"
+    volumes:
+      - ./notebooks:/opt/notebooks
+      - ./config.yaml:/opt/config/config.yaml
+
+networks:
+  spotter:
+    external: true
