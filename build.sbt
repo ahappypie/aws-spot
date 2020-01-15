@@ -13,7 +13,7 @@ lazy val avroVersion = "1.9.1"
 lazy val avroSerializerVersion = "5.3.1"
 lazy val kafkaClientVersion = "2.4.0"
 
-resolvers += "io.confluent" at "http://packages.confluent.io/maven/"
+resolvers += "io.confluent" at "https://packages.confluent.io/maven/"
 
 libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "ec2" % awsVersion,
