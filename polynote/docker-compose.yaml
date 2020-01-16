@@ -2,7 +2,7 @@
 version: '2'
 services:
   polynote:
-    image: polynote/polynote:0.2.15-2.11-spark2.4
+    image: polynote/polynote:0.2.17-2.11-spark2.4
     entrypoint: ['./polynote/polynote.py', "--config", "/opt/config/config.yaml"]
     container_name: polynote
     networks:
