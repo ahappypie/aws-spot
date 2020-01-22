@@ -25,7 +25,7 @@ class AWSSpotPriceActor(window: Window) extends Actor {
     val filters = List(Filter.builder().name("product-description").values("Linux/UNIX").build()).asJava
     val req = DescribeSpotPriceHistoryRequest.builder().startTime(window.start).endTime(window.end).filters(filters).build()
     val res = ec2.describeSpotPriceHistoryPaginator(req)
-    res.spotPriceHistory().iterator().asScala.map(p => new SpotPrice(provider = "aws", zone = p.availabilityZone(), instance = p.instanceTypeAsString(),
+    res.spotPriceHistory().iterator().asScala.map(p => SpotPrice(provider = "aws", zone = p.availabilityZone(), instance = p.instanceTypeAsString(),
       timestamp = p.timestamp(), price = p.spotPrice().toDouble))
   }
 }

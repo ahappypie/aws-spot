@@ -8,11 +8,11 @@ import io.github.ahappypie.spotter.SpotPrice
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
 
-object DataActor {
-  def props(topic: String) = Props(new DataActor(topic))
+object KafkaPublisherActor {
+  def props(topic: String) = Props(new KafkaPublisherActor(topic))
 }
 
-class DataActor(topic: String) extends Actor {
+class KafkaPublisherActor(topic: String) extends Actor {
   var producer: KafkaProducer[String, SpotPrice] = null
 
   override def preStart(): Unit = {

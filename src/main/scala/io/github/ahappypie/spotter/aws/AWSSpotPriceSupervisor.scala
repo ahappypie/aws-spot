@@ -9,14 +9,14 @@ import akka.util.Timeout
 import io.github.ahappypie.spotter.SpotPrice
 import software.amazon.awssdk.regions.Region
 
-import scala.collection.mutable.{ArrayBuffer}
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import io.github.ahappypie.spotter.aws.OperatingMode.OperatingMode
 
 object AWSSpotPriceSupervisor {
   def props(regionFilters: List[String], kafkaTopic: String) = Props(new AWSSpotPriceSupervisor(regionFilters, kafkaTopic))
-  case class Start()
-  case class End()
+  case class Start(mode: OperatingMode)
   case class Window(start: Instant, end: Instant)
 }
 
@@ -29,19 +29,15 @@ class AWSSpotPriceSupervisor(regionFilters: List[String], kafkaTopic: String) ex
 
   override def preStart(): Unit = {
     super.preStart()
-    dataActor = context.actorOf(DataActor.props(kafkaTopic), "kafka-publisher")
+    dataActor = context.actorOf(KafkaPublisherActor.props(kafkaTopic), "kafka-publisher")
     context.watch(dataActor)
   }
 
   override def receive: Receive = {
-    case Start => {
-      val window = getPreviousMinute(None)
-      for(r <- regionFilters) {
-        if(Region.regions().contains(Region.of(r))) {
-          val actor = context.actorOf(AWSSpotPriceActor.props(window))
-          priceActors += actor
-          actor ! Region.of(r)
-        }
+    case Start(mode) => {
+      mode match {
+        case OperatingMode.IMMEDIATE => startImmediate()
+        case OperatingMode.BACKFILL => startBackfill()
       }
     }
 
@@ -56,6 +52,25 @@ class AWSSpotPriceSupervisor(regionFilters: List[String], kafkaTopic: String) ex
     }
 
     case Terminated(dataActor) => context.system.terminate()
+  }
+
+  private def startImmediate(): Unit = {
+    val window = getPreviousMinute(None)
+    for(r <- regionFilters) {
+      if(Region.regions().contains(Region.of(r))) {
+        val actor = context.actorOf(AWSSpotPriceActor.props(window))
+        priceActors += actor
+        actor ! Region.of(r)
+      }
+    }
+  }
+
+  private def startBackfill(): Unit = {
+    /**
+     * TODO
+     * get offset
+     * iterate windows from offset
+     */
   }
 
   private def getPreviousMinute(t: Option[LocalDateTime]): Window = {

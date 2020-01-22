@@ -9,6 +9,6 @@ object Main {
   def main(args: Array[String]): Unit = {
     val regionFilters = sys.env.getOrElse("REGION_FILTERS", "us-east-1,us-west-2").split(",").toList
     val system = ActorSystem("spotter-aws")
-    system.actorOf(AWSSpotPriceSupervisor.props(regionFilters, "spot-price-topic")) ! Start
+    system.actorOf(AWSSpotPriceSupervisor.props(regionFilters, "spot-price-topic")) ! Start(OperatingMode.IMMEDIATE)
   }
 }
