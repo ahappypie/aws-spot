@@ -8,7 +8,8 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val regionFilters = sys.env.getOrElse("REGION_FILTERS", "us-east-1,us-west-2").split(",").toList
+    val mode = sys.env.getOrElse("OPERATING_MODE", "IMMEDIATE").toUpperCase match {case "IMMEDIATE" => OperatingMode.IMMEDIATE case "BACKFILL" => OperatingMode.BACKFILL}
     val system = ActorSystem("spotter-aws")
-    system.actorOf(AWSSpotPriceSupervisor.props(regionFilters, "spot-price-topic")) ! Start(OperatingMode.IMMEDIATE)
+    system.actorOf(AWSSpotPriceSupervisor.props(regionFilters, "spot-price-topic")) ! Start(mode)
   }
 }

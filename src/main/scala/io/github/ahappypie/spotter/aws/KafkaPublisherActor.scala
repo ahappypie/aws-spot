@@ -40,7 +40,7 @@ class KafkaPublisherActor(topic: String) extends Actor {
     }
   }
 
-  private def getProducer(): KafkaProducer[String, io.github.ahappypie.spotter.SpotPrice] = {
+  private def getProducer(): KafkaProducer[String, SpotPrice] = {
     val props = new Properties()
     //set key serializer
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer].getCanonicalName)
