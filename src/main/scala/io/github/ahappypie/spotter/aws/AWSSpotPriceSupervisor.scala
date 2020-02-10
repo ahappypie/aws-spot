@@ -1,7 +1,7 @@
 package io.github.ahappypie.spotter.aws
 
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.Instant
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import akka.pattern.ask
@@ -9,74 +9,51 @@ import akka.util.Timeout
 import io.github.ahappypie.spotter.SpotPrice
 import software.amazon.awssdk.regions.Region
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import io.github.ahappypie.spotter.aws.OperatingMode.OperatingMode
 
 object AWSSpotPriceSupervisor {
-  def props(regionFilters: List[String], kafkaTopic: String) = Props(new AWSSpotPriceSupervisor(regionFilters, kafkaTopic))
-  case class Start(mode: OperatingMode)
-  case class Window(start: Instant, end: Instant)
+  def props(region: String, kafkaTopic: String) = Props(new AWSSpotPriceSupervisor(region, kafkaTopic))
+  case class Start(window: Window)
+  case class Window(start: Instant, end: Instant) {
+    def contains(i: Instant): Boolean = {
+      (i.equals(start) || i.equals(end)) || (i.isAfter(start) && i.isBefore(end))
+    }
+  }
 }
 
-class AWSSpotPriceSupervisor(regionFilters: List[String], kafkaTopic: String) extends Actor {
+class AWSSpotPriceSupervisor(region: String, kafkaTopic: String) extends Actor {
   import AWSSpotPriceSupervisor._
   implicit val timeout: Timeout = 5.seconds
 
-  var dataActor: ActorRef = null
-  val priceActors: ArrayBuffer[ActorRef] = new ArrayBuffer(regionFilters.size)
+  var awsRegion: Region = null
+  var kafkaActor: ActorRef = null
+  var priceActor: ActorRef = null
 
   override def preStart(): Unit = {
     super.preStart()
-    dataActor = context.actorOf(KafkaPublisherActor.props(kafkaTopic), "kafka-publisher")
-    context.watch(dataActor)
+    if(Region.regions().contains(Region.of(region))) {
+      awsRegion = Region.of(region)
+    }
+    kafkaActor = context.actorOf(KafkaPublisherActor.props(kafkaTopic), "kafka-publisher")
+    context.watch(kafkaActor)
   }
 
   override def receive: Receive = {
-    case Start(mode) => {
-      mode match {
-        case OperatingMode.IMMEDIATE => startImmediate()
-        case OperatingMode.BACKFILL => startBackfill()
-      }
+    case Start(window) => {
+        priceActor = context.actorOf(AWSSpotPriceActor.props(window))
+        priceActor ! awsRegion
     }
 
-    case prices: Iterator[SpotPrice] => {
-      val f = dataActor ? prices
-      Await.result(f, timeout.duration)
-      priceActors -= sender
-      if(priceActors.isEmpty) {
-        println("spot price actors finished")
-        dataActor ! PoisonPill
-      }
+    case prices: List[SpotPrice] => {
+      val f = kafkaActor ! prices
+      //Await.result(f, timeout.duration)
+      //println("spot price actor finished")
+      //kafkaActor ! PoisonPill
     }
 
-    case Terminated(dataActor) => context.system.terminate()
-  }
+    case s: String => println(s)
 
-  private def startImmediate(): Unit = {
-    val window = getPreviousMinute(None)
-    for(r <- regionFilters) {
-      if(Region.regions().contains(Region.of(r))) {
-        val actor = context.actorOf(AWSSpotPriceActor.props(window))
-        priceActors += actor
-        actor ! Region.of(r)
-      }
-    }
-  }
-
-  private def startBackfill(): Unit = {
-    /**
-     * TODO
-     * get offset
-     * iterate windows from offset
-     */
-  }
-
-  private def getPreviousMinute(t: Option[LocalDateTime]): Window = {
-    val now = t.getOrElse(LocalDateTime.now()).minusMinutes(1)
-    val start = now.withSecond(0).withNano(0)
-    val end = now.withSecond(59).withNano(999999999)
-    Window(start.toInstant(ZoneOffset.UTC), end.toInstant(ZoneOffset.UTC))
+    case Terminated(kafkaActor) => context.system.terminate()
   }
 }

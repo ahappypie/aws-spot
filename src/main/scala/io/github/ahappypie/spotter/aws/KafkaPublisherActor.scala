@@ -30,7 +30,7 @@ class KafkaPublisherActor(topic: String) extends Actor {
   }
 
   override def receive: Receive = {
-    case data: Iterator[SpotPrice] => {
+    case data: List[SpotPrice] => {
       val s = data.size
       for(p <- data) {
         val f = producer.send(new ProducerRecord(topic, p))

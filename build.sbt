@@ -18,6 +18,7 @@ resolvers += "io.confluent" at "https://packages.confluent.io/maven/"
 libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "ec2" % awsVersion,
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
   "org.apache.avro" % "avro" % avroVersion,
   "io.confluent" % "kafka-avro-serializer" % avroSerializerVersion,
   "org.apache.kafka" % "kafka-clients" % kafkaClientVersion

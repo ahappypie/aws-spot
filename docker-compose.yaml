@@ -57,6 +57,22 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
 
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.23.0
+    hostname: kafdrop
+    networks:
+      - spotter
+    container_name: kafdrop
+    depends_on:
+      - broker
+    ports:
+      - "9009:9000"
+    environment:
+      KAFKA_BROKERCONNECT: 'broker:29092'
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+      CMD_ARGS: "--schemaregistry.connect=http://schema-registry:8081 --message.format=AVRO"
+
 networks:
   spotter:
     external: true
