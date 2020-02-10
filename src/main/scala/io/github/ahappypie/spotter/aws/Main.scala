@@ -13,9 +13,10 @@ object Main {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def main(args: Array[String]): Unit = {
-    val region = sys.env.getOrElse("REGION", "us-east-1")
+    val regions = sys.env.getOrElse("REGIONS", "us-east-1").split(",").toList
+    val kafkaTopic = sys.env.getOrElse("KAFKA_TOPIC", "spotter")
     val system = ActorSystem("spotter-aws")
-    val supervisor = system.actorOf(AWSSpotPriceSupervisor.props(region, s"spot-price-$region"))
+    val supervisor = system.actorOf(AWSSpotPriceSupervisor.props(regions, kafkaTopic))
 
     var window: Window = null
     val now = LocalDateTime.now(ZoneOffset.UTC)
@@ -31,9 +32,6 @@ object Main {
     }
 
     println(s"window is ${window.start} to ${window.end}")
-//    val throttler = system.actorOf(Props(classOf[TimerBasedThrottler], 4 msgsPer 1.second))
-//    throttler ! SetTarget(Some(supervisor))
-//    throttler ! Start(window)
     supervisor ! Start(window)
   }
 }

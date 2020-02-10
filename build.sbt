@@ -7,7 +7,7 @@ scalaVersion := "2.13.1"
 mainClass in (Compile, run) := Some("io.github.ahappypie.spotter.aws.Main")
 sourceGenerators in Compile += (avroScalaGenerateSpecific in Compile).taskValue
 
-lazy val awsVersion = "2.10.3"
+lazy val awsVersion = "2.10.60"
 lazy val akkaVersion = "2.5.26"
 lazy val avroVersion = "1.9.1"
 lazy val avroSerializerVersion = "5.3.1"
