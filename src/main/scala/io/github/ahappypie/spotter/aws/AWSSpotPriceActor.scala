@@ -19,6 +19,7 @@ object AWSSpotPriceActor {
 class AWSSpotPriceActor(window: Window) extends Actor {
 
   var client: Ec2Client = null
+  var reg: Region = null
   var throttle: ActorRef = null
   var baseRequest: DescribeSpotPriceHistoryRequest.Builder = null
   var next = true
@@ -32,11 +33,13 @@ class AWSSpotPriceActor(window: Window) extends Actor {
   override def receive: Receive = {
     case region: Region => {
       client = Ec2Client.builder().region(region).build()
+      reg = region
       self ! getSpotPriceHistoryRequest(region, window)
     }
     case req: DescribeSpotPriceHistoryRequest => {
       throttle ! ec2Request(req)
       if(!next) {
+        println(s"poisoning myself in region $reg")
         self ! PoisonPill
       }
     }
@@ -52,12 +55,13 @@ class AWSSpotPriceActor(window: Window) extends Actor {
   private def ec2Request(req: DescribeSpotPriceHistoryRequest): Unit = {
     println("making ec2 request")
     val res = client.describeSpotPriceHistory(req)
-    if(!(res.nextToken() == null || res.nextToken().equals(""))) {
-      self ! baseRequest.nextToken(res.nextToken()).build()
-    } else {
-      println("no more tokens")
+    if(res.nextToken() == null || res.nextToken().equals("")) {
+      println(s"no more tokens in region ${reg.toString}")
       next = false
+    } else {
+      self ! baseRequest.nextToken(res.nextToken()).build()
     }
+
     context.parent ! res.spotPriceHistory().asScala
       .filter(p => window.contains(p.timestamp()))
       .map(p => SpotPrice(provider = "aws", zone = p.availabilityZone(), instance = p.instanceTypeAsString(),

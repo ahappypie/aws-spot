@@ -35,7 +35,6 @@ class KafkaPublisherActor(topic: String) extends Actor {
       for(p <- data) {
         val f = producer.send(new ProducerRecord(topic, p))
       }
-      println(s"published $s records")
       sender ! s
     }
   }

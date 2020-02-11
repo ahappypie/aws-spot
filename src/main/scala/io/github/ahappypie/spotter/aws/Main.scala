@@ -10,8 +10,6 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
 object Main {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   def main(args: Array[String]): Unit = {
     val regions = sys.env.getOrElse("REGIONS", "us-east-1").split(",").toList
     val kafkaTopic = sys.env.getOrElse("KAFKA_TOPIC", "spotter")

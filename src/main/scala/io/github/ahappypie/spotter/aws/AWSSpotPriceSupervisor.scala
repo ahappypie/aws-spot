@@ -4,13 +4,11 @@ package io.github.ahappypie.spotter.aws
 import java.time.Instant
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
-import akka.pattern.ask
 import akka.util.Timeout
 import io.github.ahappypie.spotter.SpotPrice
 import software.amazon.awssdk.regions.Region
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object AWSSpotPriceSupervisor {
@@ -49,13 +47,30 @@ class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends 
       val f = kafkaActor ! prices
     }
 
+    case s: Int => {
+      println(s"received publish of $s records")
+      if(s == 0) {
+        terminate()
+      }
+    }
+
     case Terminated(actor) => {
       if(priceActors.contains(actor)) {
         priceActors -= actor
+        println(s"removed actor $actor from pool")
       }
-      if(priceActors.isEmpty) {
-        //context.system.terminate()
-      }
+
+    }
+  }
+
+  private def terminate(): Unit = {
+    if(priceActors.isEmpty) {
+      kafkaActor ! PoisonPill
+      println("no more price actors, terminating...")
+      context.system.terminate()
+    } else {
+      import context.dispatcher
+      context.system.scheduler.scheduleOnce(1.second, self, 0)
     }
   }
 }
