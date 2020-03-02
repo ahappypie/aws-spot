@@ -3,7 +3,7 @@ package io.github.ahappypie.spotter.aws
 
 import java.time.Instant
 
-import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 import akka.util.Timeout
 import io.github.ahappypie.spotter.SpotPrice
 import software.amazon.awssdk.regions.Region
@@ -21,7 +21,7 @@ object AWSSpotPriceSupervisor {
   }
 }
 
-class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends Actor {
+class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends Actor with ActorLogging {
   import AWSSpotPriceSupervisor._
   implicit val timeout: Timeout = 5.seconds
 
@@ -48,7 +48,7 @@ class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends 
     }
 
     case s: Int => {
-      println(s"received publish of $s records")
+      log.info("received publish of {} records", s)
       if(s == 0) {
         terminate()
       }
@@ -57,7 +57,7 @@ class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends 
     case Terminated(actor) => {
       if(priceActors.contains(actor)) {
         priceActors -= actor
-        println(s"removed actor $actor from pool")
+        log.info("removed actor {} from pool", actor)
       }
 
     }
@@ -66,7 +66,7 @@ class AWSSpotPriceSupervisor(regions: List[String], kafkaTopic: String) extends 
   private def terminate(): Unit = {
     if(priceActors.isEmpty) {
       kafkaActor ! PoisonPill
-      println("no more price actors, terminating...")
+      log.info("no more price actors, terminating...")
       context.system.terminate()
     } else {
       import context.dispatcher

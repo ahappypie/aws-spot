@@ -2,7 +2,7 @@ package io.github.ahappypie.spotter.aws
 
 import java.util.Properties
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import io.github.ahappypie.spotter.SpotPrice
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
@@ -12,7 +12,7 @@ object KafkaPublisherActor {
   def props(topic: String) = Props(new KafkaPublisherActor(topic))
 }
 
-class KafkaPublisherActor(topic: String) extends Actor {
+class KafkaPublisherActor(topic: String) extends Actor with ActorLogging {
   var producer: KafkaProducer[String, SpotPrice] = null
 
   override def preStart(): Unit = {
@@ -26,7 +26,7 @@ class KafkaPublisherActor(topic: String) extends Actor {
 
     producer.flush()
     producer.close()
-    println("producer closed")
+    log.info("producer closed")
   }
 
   override def receive: Receive = {
