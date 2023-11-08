@@ -1,0 +1,43 @@
+{
+  "name": "@ahappypie/aws-spot",
+  "version": "0.1.0",
+  "description": "Gets Spot Price History for EC2",
+  "main": "dist/index.js",
+  "bin": {
+    "aws-spot": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "npm run build && npm run start",
+    "start": "node dist/index.js fill -s 2023-09-01T00:00:00Z -e 2023-11-01T00:00:00Z -l cosm-micros-bi-landing-zone -o s3",
+    "lint": "npx eslint .",
+    "format": "npx prettier ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahappypie/aws-spot.git"
+  },
+  "author": "Brian Bagdasarian",
+  "license": "MIT",
+  "dependencies": {
+    "pino": "^8.16.1",
+    "@aws-sdk/lib-storage": "^3.441.0",
+    "@aws-sdk/client-s3": "^3.441.0",
+    "@aws-sdk/client-ec2": "^3.441.0",
+    "commander": "^11.1.0",
+    "figlet": "^1.7.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.2",
+    "@types/node": "^20.8.6",
+    "@types/figlet": "^1.5.7",
+    "typescript": "^5.2.2",
+    "prettier": "^3.0.3",
+    "eslint": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "pino-pretty": "^10.2.3"
+  }
+}
